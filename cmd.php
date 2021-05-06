@@ -1,15 +1,17 @@
 <?php
 
 function sendCmd($cmd, $host, $port) {
-    if($host == null || $host == "");
+    if($host == null || $host == "") {
         $host = "127.0.0.1";
-    if($port == null || $port == "");
+    }
+    if($port == null || $port == "") {
         $port = 8888;
+    }
     
     $timeout = 10; //in seconds
     
     $fp = fsockopen($host, $port, $errno, $errstr, $timeout);
-
+    
     if (!$fp) {
         echo "{ \"error\": \"".$errno."\", \"errorMsg\": \"".$errstr."\" }\n";
     } else {
