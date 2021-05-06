@@ -9,9 +9,9 @@ function sendCmd($cmd, $host, $port) {
     $timeout = 10; //in seconds
     
     $fp = fsockopen($host, $port, $errno, $errstr, $timeout);
-    
+
     if (!$fp) {
-        echo "{ \"error\": \"".$errno."\" }\n";
+        echo "{ \"error\": \"".$errno."\", \"errorMsg\": \"".$errstr."\" }\n";
     } else {
         $out = $cmd."\n";
         fwrite($fp, $out);
