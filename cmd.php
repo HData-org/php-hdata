@@ -23,14 +23,17 @@ function substring($string, $from, $to){
     return substr($string, $from, $to - $from);
 }
 
+function endsWith($haystack, $needle) {
+    $length = strlen($needle);
+    return $length > 0 ? substr($haystack, -$length) === $needle : true;
+}
+
 function writeEnc($fp, $send, $serverPub) {
     $tmp = [];
     for($i = 0; $i < ceil(strlen($send)/128); $i++) {
         array_push($tmp, substring($send, $i*128, $i*128+128));
     }
-    //print_r($tmp);
     foreach($tmp as $chunk) {
-        //echo $chunk;
         openssl_public_encrypt($chunk, $in, $serverPub, OPENSSL_PKCS1_OAEP_PADDING);
         fwrite($fp, $in);
     }
@@ -39,16 +42,18 @@ function writeEnc($fp, $send, $serverPub) {
 
 function getResponse($encrypted_data, $privateKey) {
     $buff = "";
-    for ($i = 0; $i < ceil(strlen($encrypted_data)/512); $i++) {
+    $encrypted_data_length = strlen($encrypted_data);
+    for ($i = 0; $i < ceil($encrypted_data_length/512); $i++) {
         $tmp = substr($encrypted_data, $i*512, $i*512+512);
-
-        if(!openssl_private_decrypt($tmp, $decrypted_data, openssl_pkey_get_private($privateKey))) {
-            echo "Error\n";
+        if(!openssl_private_decrypt($tmp, $decrypted_data, $privateKey, OPENSSL_PKCS1_OAEP_PADDING)) {
+            echo " Private Decryption Error\n";
         }
-
-        $buff .= strval($decrypted_data);
+        $buff .= $decrypted_data;
+        if(endsWith($buff, "\n")) {
+            return $buff;
+            $buff = "";
+        }
     }
-    return strlen($buff)."\n";
 }
 
 /* Client key pair */
@@ -80,8 +85,10 @@ if(file_exists('clientkey.pem') && file_exists('clientcert.pem')) {
 
     $keyFile = fopen('clientkey.pem', 'w');
     fwrite($keyFile, $privKey);
+    fclose($keyFile);
     $keyFile = fopen('clientcert.pem', 'w');
     fwrite($keyFile, $pubKey);
+    fclose($keyFile);
     $publicKey = $pubKey;
     $privateKey = $privKey;
     echo "OK.\n";
@@ -96,18 +103,7 @@ if (!$fp) {
     echo "{ \"error\": \"".$errno."\", \"errorMsg\": \"".$errstr."\" }\n";
 } else {
     echo "Reading response:\n\n";
-    // while (!feof($fp)) {
-    //     $out .= fgets($fp, 800);
-    //     //echo $buff;
-    // }
-    $out = fread($fp, 800);
-    // $bytes_left = socket_get_status($fp);
-    // if ($bytes_left > 0) {
-    //     $result["results"] = fread($fp, $bytes_left["unread_bytes"]);
-    // }
-    // else {
-    //     $result["results"] = "";
-    // }
+    $out = fread($fp, 1024);
 }
 
 $serverPub = $out;
@@ -116,22 +112,36 @@ echo $serverPub;
 
 /* Split message into 128 byte chunks to encrypt and send to socket */
 writeEnc($fp, $publicKey, $serverPub);
-/* Send newline to indicate server that we finished sending */
-$out = "\n";
-openssl_public_encrypt($out, $in, $serverPub, OPENSSL_PKCS1_OAEP_PADDING);
-fwrite($fp, $in);
 
-$out = fread($fp, 512);
+/* Recive encrypted newline from server */
+// $out = fread($fp, 512);
+$out = fread($fp, 1024);
 //echo $out;
-// openssl_private_decrypt($out, $decrypted_data, $privateKey, OPENSSL_PKCS1_OAEP_PADDING);
+
+$file = fopen('newline_from_server.bin', 'w');
+fwrite($file, $out);
+fclose($file);
+
 echo getResponse($out, $privateKey);
+
+//echo getResponse($out, $privateKey);
+
+// echo $out;
+// openssl_private_decrypt($out, $decrypted_data, $privateKey, OPENSSL_PKCS1_OAEP_PADDING);
+//echo getResponse($out, $privateKey);
 //echo $decrypted_data;
 
 writeEnc($fp, "{\"cmd\":\"status\"}\n", $serverPub);
+$out = fread($fp, 1024);
+
+$file = fopen('status_from_server.bin', 'w');
+fwrite($file, $out);
+fclose($file);
+
 echo getResponse($out, $privateKey);
 
 
-echo "Closing socket...";
+//echo "Closing socket...";
 fclose($fp);
-echo "OK.\n\n";
+//echo "OK.\n\n";
 ?>
