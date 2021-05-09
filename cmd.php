@@ -14,8 +14,6 @@ $timeout = 10; //in seconds
 2. Client sends server its public key, encrypted using the server's public key, followed by a newline
 3. Server sends client a newline to confirm is has the key, encrypted using the client's public key
 4. Session is started, all communication is encrypted using the recipient's public key and decrypted by the recipient using its private key
-
-RSA type pkcs8 formatted in PEM, public key should be spki in PEM
 ====================================================================
 */
 
@@ -62,6 +60,7 @@ $privateKey;
 
 if(file_exists('clientkey.pem') && file_exists('clientcert.pem')) {
     echo "Reading client keys from files...";
+    // Read client keys from files
     $fp = fopen("clientcert.pem", "r");
     $publicKey = fread($fp, 8192);
     fclose($fp);
@@ -82,7 +81,7 @@ if(file_exists('clientkey.pem') && file_exists('clientcert.pem')) {
     // Extract the public key from $res to $pubKey
     $pubKey = openssl_pkey_get_details($res);
     $pubKey = $pubKey["key"];
-
+    // Write keys to files
     $keyFile = fopen('clientkey.pem', 'w');
     fwrite($keyFile, $privKey);
     fclose($keyFile);
@@ -94,7 +93,7 @@ if(file_exists('clientkey.pem') && file_exists('clientcert.pem')) {
     echo "OK.\n";
 }
 
-/* Create a TCP/IP socket. */
+/* Create a TCP/IP socket */
 echo "Attempting to connect to '$address' on port '$service_port'...";
 $fp = fsockopen($address, $service_port, $errno, $errstr, $timeout);
 echo "OK.\n";
@@ -114,34 +113,21 @@ echo $serverPub;
 writeEnc($fp, $publicKey, $serverPub);
 
 /* Recive encrypted newline from server */
-// $out = fread($fp, 512);
 $out = fread($fp, 1024);
-//echo $out;
 
-$file = fopen('newline_from_server.bin', 'w');
-fwrite($file, $out);
-fclose($file);
-
+/* Decrypte message from server */
 echo getResponse($out, $privateKey);
 
-//echo getResponse($out, $privateKey);
+/* ======= Handshake complete ======= */
 
-// echo $out;
-// openssl_private_decrypt($out, $decrypted_data, $privateKey, OPENSSL_PKCS1_OAEP_PADDING);
-//echo getResponse($out, $privateKey);
-//echo $decrypted_data;
-
+/* Send status commad */
 writeEnc($fp, "{\"cmd\":\"status\"}\n", $serverPub);
 $out = fread($fp, 1024);
 
-$file = fopen('status_from_server.bin', 'w');
-fwrite($file, $out);
-fclose($file);
-
 echo getResponse($out, $privateKey);
 
-
-//echo "Closing socket...";
+/* Close socket connection */
+echo "Closing socket...";
 fclose($fp);
-//echo "OK.\n\n";
+echo "OK.\n\n";
 ?>
