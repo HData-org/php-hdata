@@ -1,11 +1,15 @@
 <?php
 
-error_reporting(E_ALL);
+header('Content-Type: application/json');
 
 $service_port = 8888;
 $address = gethostbyname('localhost');
 
 $timeout = 10; //in seconds
+
+$debug = $_REQUEST["debug"] ? true : false;
+
+$debug ? error_reporting(E_ALL) : "";
 
 /*
 ====================================================================
@@ -44,7 +48,7 @@ function getResponse($encrypted_data, $privateKey) {
     for ($i = 0; $i < ceil($encrypted_data_length/512); $i++) {
         $tmp = substr($encrypted_data, $i*512, $i*512+512);
         if(!openssl_private_decrypt($tmp, $decrypted_data, $privateKey, OPENSSL_PKCS1_OAEP_PADDING)) {
-            echo " Private Decryption Error\n";
+            echo "{\"error\":\"Private Decryption Error\"}\n";
         }
         $buff .= $decrypted_data;
         if(endsWith($buff, "\n")) {
@@ -59,7 +63,7 @@ $publicKey;
 $privateKey;
 
 if(file_exists('clientkey.pem') && file_exists('clientcert.pem')) {
-    echo "Reading client keys from files...";
+    echo $debug ? "Reading client keys from files..." : "";
     // Read client keys from files
     $fp = fopen("clientcert.pem", "r");
     $publicKey = fread($fp, 8192);
@@ -67,9 +71,9 @@ if(file_exists('clientkey.pem') && file_exists('clientcert.pem')) {
     $fp=fopen("clientkey.pem", "r");
     $privateKey = fread($fp, 8192);
     fclose($fp);
-    echo "OK.\n";
+    echo $debug ? "OK.\n" : "";
 } else {
-    echo "Creating new client keys...";
+    echo $debug ? "Creating new client keys..." : "";
     // Create the private and public key
     $res = openssl_pkey_new(array(
         "digest_alg" => "sha512",
@@ -90,24 +94,24 @@ if(file_exists('clientkey.pem') && file_exists('clientcert.pem')) {
     fclose($keyFile);
     $publicKey = $pubKey;
     $privateKey = $privKey;
-    echo "OK.\n";
+    echo $debug ? "OK.\n" : "";
 }
 
 /* Create a TCP/IP socket */
-echo "Attempting to connect to '$address' on port '$service_port'...";
+echo $debug ? "Attempting to connect to '$address' on port '$service_port'..." : "";
 $fp = fsockopen($address, $service_port, $errno, $errstr, $timeout);
-echo "OK.\n";
+echo $debug ? "OK.\n" : "";
 $out = "";
 if (!$fp) {
-    echo "{ \"error\": \"".$errno."\", \"errorMsg\": \"".$errstr."\" }\n";
+    echo "{\"error\":\"".$errno."\",\"errorMsg\":\"".$errstr."\"}\n";
 } else {
-    echo "Reading response:\n\n";
+    echo $debug ? "Reading response:\n\n" : "";
     $out = fread($fp, 1024);
 }
 
 $serverPub = $out;
 
-echo $serverPub;
+echo $debug ? $serverPub : "";
 
 /* Split message into 128 byte chunks to encrypt and send to socket */
 writeEnc($fp, $publicKey, $serverPub);
@@ -127,7 +131,7 @@ $out = fread($fp, 1024);
 echo getResponse($out, $privateKey);
 
 /* Close socket connection */
-echo "Closing socket...";
+echo $debug ? "Closing socket..." : "";
 fclose($fp);
-echo "OK.\n\n";
+echo $debug ? "OK.\n\n" : "";
 ?>
