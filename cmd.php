@@ -7,7 +7,15 @@ $address = gethostbyname('localhost');
 
 $timeout = 10; //in seconds
 
-$debug = $_REQUEST["debug"] ? true : false;
+$debug = false;
+
+if(isset($_REQUEST["debug"])) {
+    if($_REQUEST["debug"]) {
+        $debug = true;
+    } else {
+        $debug = false;
+    }
+}
 
 $debug ? error_reporting(E_ALL) : "";
 
@@ -62,14 +70,14 @@ function getResponse($encrypted_data, $privateKey) {
 $publicKey;
 $privateKey;
 
-if(file_exists('clientkey.pem') && file_exists('clientcert.pem')) {
+if(file_exists('.htprivkey.pem') && file_exists('clientcert.pem')) {
     echo $debug ? "Reading client keys from files..." : "";
     // Read client keys from files
+    $fp=fopen(".htprivkey.pem", "r");
+    $privateKey = fread($fp, 8192);
+    fclose($fp);
     $fp = fopen("clientcert.pem", "r");
     $publicKey = fread($fp, 8192);
-    fclose($fp);
-    $fp=fopen("clientkey.pem", "r");
-    $privateKey = fread($fp, 8192);
     fclose($fp);
     echo $debug ? "OK.\n" : "";
 } else {
@@ -86,7 +94,7 @@ if(file_exists('clientkey.pem') && file_exists('clientcert.pem')) {
     $pubKey = openssl_pkey_get_details($res);
     $pubKey = $pubKey["key"];
     // Write keys to files
-    $keyFile = fopen('clientkey.pem', 'w');
+    $keyFile = fopen('.htprivkey.pem', 'w');
     fwrite($keyFile, $privKey);
     fclose($keyFile);
     $keyFile = fopen('clientcert.pem', 'w');
