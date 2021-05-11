@@ -43,7 +43,7 @@ class HData {
 
     public function __destruct()
 	{
-		$this->closeSocket();
+		$this->disconnect();
 	}
 
     public function connect() {
