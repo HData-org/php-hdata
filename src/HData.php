@@ -5,11 +5,12 @@ class HData {
     /*
     How it connects:
     ====================================================================
-    1. Server sends client its public key, followed by a newline
+    1. Client opens TCP/IP socket
+    2. Server sends client its public key, followed by a newline
     -----Encryption starts-----
-    2. Client sends server its public key, encrypted using the server's public key, followed by a newline
-    3. Server sends client a newline to confirm is has the key, encrypted using the client's public key
-    4. Session is started, all communication is encrypted using the recipient's public key and decrypted by the recipient using its private key
+    3. Client sends server its public key, encrypted using the server's public key, followed by a newline
+    4. Server sends client a newline to confirm is has the key, encrypted using the client's public key
+    5. Session is started, all communication is encrypted using the recipient's public key and decrypted by the recipient using its private key
     ====================================================================
     */
     
@@ -118,7 +119,7 @@ class HData {
         return $this->sendCmd($cmd);
     }
     public function setKey($tableName, $keyName, $content) {
-        $cmd = [ "cmd" => "setkey", "table" => $tableName, "content" => $content ];
+        $cmd = [ "cmd" => "setkey", "table" => $tableName, "key" => $keyName, "content" => $content ];
         return $this->sendCmd($cmd);
     }
     public function deleteKey($tableName, $keyName) {
@@ -203,7 +204,7 @@ class HData {
         if(file_exists('.htprivkey.pem') && file_exists('clientcert.pem')) {
             echo $this->debug ? "Reading client keys from files..." : "";
 
-            // Read client keys from files
+            //Read client keys from files
             $fp=fopen(".htprivkey.pem", "r");
             $this->keypair['privateKey'] = fread($fp, 8192);
             fclose($fp);
@@ -215,18 +216,18 @@ class HData {
         } else {
             echo $this->debug ? "Creating new client keys..." : "";
 
-            // Create the private and public key
+            //Create the private and public key
             $res = openssl_pkey_new(array(
                 "digest_alg" => "sha512",
                 "private_key_bits" => 4096,
                 "private_key_type" => OPENSSL_KEYTYPE_RSA,
             ));
-            // Extract the private key from $res to $privKey
+            //Extract the private key from $res to $privKey
             openssl_pkey_export($res, $privKey);
-            // Extract the public key from $res to $pubKey
+            //Extract the public key from $res to $pubKey
             $pubKey = openssl_pkey_get_details($res);
             $pubKey = $pubKey["key"];
-            // Write keys to files
+            //Write keys to files
             $keyFile = fopen('.htprivkey.pem', 'w');
             fwrite($keyFile, $privKey);
             fclose($keyFile);
@@ -243,19 +244,18 @@ class HData {
     private function handshake() {
         echo $this->debug ? "Reading response:\n\n" : "";
 
-        $response = fread($this->socket, 1024);
-
-        $this->serverPub = $response;
+        //Get public key from server
+        $this->serverPub = fread($this->socket, 1024);
 
         echo $this->debug ? $this->serverPub : "";
 
-        // Split message into 128 byte chunks to encrypt and send to socket
+        //Split message into 128 byte chunks to encrypt and send to socket
         $this->writeEnc($this->keypair['publicKey']);
 
-        // Recive encrypted newline from server
+        //Recive encrypted newline from server
         $response = fread($this->socket, 1024);
 
-        // Decrypte message from server
+        //Decrypte message from server
         $decrypted = $this->getResponse($response);
 
         echo $this->debug ? $decrypted : "";
@@ -265,7 +265,8 @@ class HData {
 
     private function openSocket() {
         echo $this->debug ? "Attempting to connect to '$this->host' on port '$this->port'..." : "";
-
+        
+        //Open TCP/IP socket with HData server
         $this->socket = fsockopen($this->address, $this->port, $errno, $errstr, $this->timeout);
 
         echo $this->debug ? "OK.\n" : "";
