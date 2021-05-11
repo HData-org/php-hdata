@@ -46,18 +46,18 @@ class HData {
 	}
 
     public function connect() {
-
         //validate host
 		if (filter_var($this->host, FILTER_VALIDATE_IP)) {
-			//host is ip => address is host
 			$this->address = $this->host;
 		} else {
-			//find domain ip
 			$resolvedIp = gethostbyname($this->host);
 			if (filter_var($resolvedIp, FILTER_VALIDATE_IP)) {
-				//resolvedIp is a valid IP => address is resolvedIp
 				$this->address = $resolvedIp;
-			}
+			} else {
+                echo $this->debug ? "Not a valid host" : "";
+                
+                $this->address = $this->host;
+            }
         }
 
         $this->createKeyPair();
@@ -74,19 +74,87 @@ class HData {
     /* Commands */
 
     public function getStatus() {
-        $cmd = [
-            "cmd" => "status"
-        ];
+        $cmd = [ "cmd" => "status" ];
         return $this->sendCmd($cmd);
     }
-
     public function login($user, $password) {
         $cmd = [ "cmd" => "login", "user" => $user, "password" => $password ];
         return $this->sendCmd($cmd);
     }
-
     public function logout() {
         $cmd = [ "cmd" => "logout" ];
+        return $this->sendCmd($cmd);
+    }
+    public function createUser($user, $password, $permissions) {
+        $cmd = [ "cmd" => "createuser", "user" => $user, "password" => $password, "permissions" => $permissions ];
+        return $this->sendCmd($cmd);
+    }
+    public function deleteUser($user) {
+        $cmd = [ "cmd" => "deleteuser", "user" => $user ];
+        return $this->sendCmd($cmd);
+    }
+    public function getUser($user) {
+        $cmd = [ "cmd" => "getuser", "user" => $user ];
+        return $this->sendCmd($cmd);
+    }
+    public function updateUser($user, $property, $content) {
+        $cmd = [ "cmd" => "updateuser", "user" => $user, "property" => $property, "content" => $content ];
+        return $this->sendCmd($cmd);
+    }
+    public function updatePassword($user, $password) {
+        $cmd = [ "cmd" => "updatepassword", "user" => $user, "password" => $password ];
+        return $this->sendCmd($cmd);
+    }
+    public function createTable($tableName) {
+        $cmd = [ "cmd" => "createtable", "table" => $tableName ];
+        return $this->sendCmd($cmd);
+    }
+    public function deleteTable($tableName) {
+        $cmd = [ "cmd" => "deletetable", "table", $tableName ];
+        return $this->sendCmd($cmd);
+    }
+    public function getKey($tableName, $keyName) {
+        $cmd = [ "cmd" => "getkey", "table" => $tableName, "key" => $keyName ];
+        return $this->sendCmd($cmd);
+    }
+    public function setKey($tableName, $keyName, $content) {
+        $cmd = [ "cmd" => "setkey", "table" => $tableName, "content" => $content ];
+        return $this->sendCmd($cmd);
+    }
+    public function deleteKey($tableName, $keyName) {
+        $cmd = [ "cmd" => "deletekey", "table" => $tableName, "key" => $keyName ];
+        return $this->sendCmd($cmd);
+    }
+    public function queryAll($evaluator) {
+        $cmd = [ "cmd" => "queryall", "evaluator" => $evaluator ];
+        return $this->sendCmd($cmd);
+    }
+    public function getTables() {
+        $cmd = [ "cmd" => "gettables" ];
+        return $this->sendCmd($cmd);
+    }
+    public function queryTable($tableName, $evaluator) {
+        $cmd = [ "cmd" => "querytable", "table" => $tableName, "evaluator" => $evaluator ];
+        return $this->sendCmd($cmd);
+    }
+    public function tableExists($tableName) {
+        $cmd = [ "cmd" => "tableexists", "table" => $tableName ];
+        return $this->sendCmd($cmd);
+    }
+    public function tableSize($tableName) {
+        $cmd = [ "cmd" => "tablesize", "table" => $tableName ];
+        return $this->sendCmd($cmd);
+    }
+    public function tableKeys($tableName) {
+        $cmd = [ "cmd" => "tablekeys", "table" => $tableName ];
+        return $this->sendCmd($cmd);
+    }
+    public function getProperty($tableName, $keyName, $path) {
+        $cmd = [ "cmd" => "getproperty", "table" => $tableName, "key" => $keyName, "path" => $path ];
+        return $this->sendCmd($cmd);
+    }
+    public function setProperty($tableName, $keyName, $path, $value) {
+        $cmd = [ "cmd" => "setproperty", "table" => $tableName, "key" => $keyName, "path" => $path, "value" => $value ];
         return $this->sendCmd($cmd);
     }
 
