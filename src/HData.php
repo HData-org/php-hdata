@@ -27,7 +27,7 @@ class HData {
 
     /* Public methods */
 
-    public function __construct($host = '127.0.0.1', $port = 8888, $timeout = 10, $debug = false)
+    public function __construct($host = '127.0.0.1', $port = 8888, $debug = false, $timeout = 10)
     {
         $this->host = $host;
         $this->port = $port;
@@ -64,6 +64,11 @@ class HData {
         $this->createKeyPair();
         $this->openSocket();
         $this->handshake();
+    }
+
+    public function disconnect() {
+        $this->logout();
+        $this->closeSocket();
     }
 
     public function sendCmd($cmd) {
@@ -265,7 +270,7 @@ class HData {
 
     private function openSocket() {
         echo $this->debug ? "Attempting to connect to '$this->host' on port '$this->port'..." : "";
-        
+
         //Open TCP/IP socket with HData server
         $this->socket = fsockopen($this->address, $this->port, $errno, $errstr, $this->timeout);
 
