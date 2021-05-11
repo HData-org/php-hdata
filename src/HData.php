@@ -54,8 +54,8 @@ class HData {
 			if (filter_var($resolvedIp, FILTER_VALIDATE_IP)) {
 				$this->address = $resolvedIp;
 			} else {
-                echo $this->debug ? "Not a valid host" : "";
-                
+                echo $this->debug ? $this->host." is not a valid host" : "";
+
                 $this->address = $this->host;
             }
         }
