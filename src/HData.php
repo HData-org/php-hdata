@@ -12,15 +12,15 @@ class HData {
     4. Session is started, all communication is encrypted using the recipient's public key and decrypted by the recipient using its private key
     ====================================================================
     */
-
+    
     private $host;
     private $address;
-	private $port;
-	private $timeout;
+    private $port;
+    private $timeout;
 
     private $debug;
 
-	private $socket;
+    private $socket;
     private $serverPub;
     private $keypair;
 
@@ -66,6 +66,7 @@ class HData {
     }
 
     public function sendCmd($cmd) {
+        $cmd = json_encode($cmd);
         $this->writeEnc($cmd."\n");
         return $this->getResponse(fread($this->socket, 1024));
     }
@@ -73,15 +74,20 @@ class HData {
     /* Commands */
 
     public function getStatus() {
-        return $this->sendCmd("{ \"cmd\": \"status\" }");
+        $cmd = [
+            "cmd" => "status"
+        ];
+        return $this->sendCmd($cmd);
     }
 
     public function login($user, $password) {
-        return $this->sendCmd("{ \"cmd\": \"login\", \"user\": \"".$user."\", \"password\": \"".$password."\" }");
+        $cmd = [ "cmd" => "login", "user" => $user, "password" => $password ];
+        return $this->sendCmd($cmd);
     }
 
     public function logout() {
-        return $this->sendCmd("{ \"cmd\": \"logout\" }");
+        $cmd = [ "cmd" => "logout" ];
+        return $this->sendCmd($cmd);
     }
 
     /* Private methods */
