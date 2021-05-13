@@ -1,8 +1,8 @@
 Interact with HData servers using PHP
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/hdata-org/hdata.svg?style=flat-square)](https://packagist.org/packages/hdata-org/hdata)
-[![Total Downloads](https://img.shields.io/packagist/dt/hdata-org/hdata.svg?style=flat-square)](https://packagist.org/packages/hdata-org/hdata)
-![GitHub Actions](https://github.com/hdata-org/hdata/actions/workflows/main.yml/badge.svg)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/hdata/hdata.svg?style=flat-square)](https://packagist.org/packages/hdata/hdata)
+[![Total Downloads](https://img.shields.io/packagist/dt/hdata/hdata.svg?style=flat-square)](https://packagist.org/packages/hdata/hdata)
+![GitHub Actions](https://github.com/hdata-org/php-hdata/actions/workflows/main.yml/badge.svg)
 
 See https://github.com/HData-org/hdata/tree/master/server for creating an HData server to connect this package with.
 

@@ -4,7 +4,7 @@
     "keywords": [
         "hdata"
     ],
-    "homepage": "https://github.com/hdata-org/hdata",
+    "homepage": "https://github.com/hdata-org/php-hdata",
     "license": "Apache-2.0",
     "type": "library",
     "authors": [
