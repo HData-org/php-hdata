@@ -1,0 +1,36 @@
+{
+    "name": "hdata/hdata",
+    "description": "Interact with HData servers using PHP",
+    "keywords": [
+        "hdata"
+    ],
+    "homepage": "https://github.com/hdata-org/hdata",
+    "license": "Apache-2.0",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Ben Border",
+            "email": "ben@bunnbuns.net",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^7.4|^8.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "HData\\HData\\": "src"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
+
+    },
+    "config": {
+        "sort-packages": true
+    }
+}

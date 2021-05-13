@@ -24,6 +24,7 @@ class HData {
 
     //Point to cnf file if on Windows. Example: C:\xampp\apache\conf\openssl.cnf
     private $openssl_cnf = '.';
+    
     private $socket;
     private $keypair;
     private $serverPub;
