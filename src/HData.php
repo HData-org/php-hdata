@@ -19,13 +19,18 @@ class HData {
     private $host;
     private $address;
     private $port;
+    private $debug;
     private $timeout;
 
-    private $debug;
-
+    //Point to cnf file if on Windows. Example: C:\xampp\apache\conf\openssl.cnf
+    private $openssl_cnf = '.';
     private $socket;
     private $keypair;
     private $serverPub;
+    private $keypair_filenames = [
+        'publicKey' => 'clientcert.pem',
+        'privateKey' => '.htprivkey.pem'
+    ] ;
 
     /* Public methods */
 
@@ -36,7 +41,6 @@ class HData {
         $this->timeout = $timeout;
         $this->debug = $debug;
         $this->keypair = [];
-        $this->serverPub;
 
         $this->debug ? error_reporting(E_ALL) : "";
 
@@ -216,18 +220,18 @@ class HData {
     }
 
     private function getKeyPair() {
-        if(file_exists('.htprivkey.pem') && file_exists('clientcert.pem')) {
+        if(file_exists($this->keypair_filenames['privateKey']) && file_exists($this->keypair_filenames['publicKey'])) {
             echo $this->debug ? "Reading client keys from files..." : "";
             //Read client keys from files
-            $fp=fopen(".htprivkey.pem", "r");
+            $fp=fopen($this->keypair_filenames['privateKey'], "r");
             $this->keypair['privateKey'] = fread($fp, 8192);
             fclose($fp);
-            $fp = fopen("clientcert.pem", "r");
+            $fp = fopen($this->keypair_filenames['publicKey'], "r");
             $this->keypair['publicKey'] = fread($fp, 8192);
             fclose($fp);
-            if($this-> keypair['privateKey'] == "" || $this-> keypair['privateKey'] == null) {
-                //Private key blank, create new pair
-                echo $this->debug ? "Private key is blank.\n" : "";
+            if($this-> keypair['privateKey'] == "" || $this-> keypair['privateKey'] == null || $this-> keypair['publicKey'] == "" || $this-> keypair['publicKey'] == null) {
+                //A key blank, create new pair
+                echo $this->debug ? "Key is blank.\n" : "";
                 $this->createKeyPair();
             }
 
@@ -240,22 +244,26 @@ class HData {
     private function createKeyPair() {
         echo $this->debug ? "Creating new client keys..." : "";
         //Create the private and public key
-        $ssl_type = [
+        $config = [];
+        $config['config'] = $this->openssl_cnf;
+        $res = openssl_pkey_new([
             "digest_alg" => "sha512",
             "private_key_bits" => 4096,
             "private_key_type" => 'OPENSSL_KEYTYPE_RSA'
-        ];
-        $res = openssl_pkey_new($ssl_type);
+        ] + $config);
+        if(!$res) {
+           echo $this->debug ? "Key not created\n" : ""; 
+        }
         //Extract the private key from $res to $privKey
-        openssl_pkey_export($res, $privKey);
+        openssl_pkey_export($res, $privKey, null, $config);
         //Extract the public key from $res to $pubKey
         $pubKey = openssl_pkey_get_details($res);
         $pubKey = $pubKey["key"];
         //Write keys to files
-        $keyFile = fopen('.htprivkey.pem', 'w');
+        $keyFile = fopen($this->keypair_filenames['privateKey'], 'w');
         fwrite($keyFile, $privKey);
         fclose($keyFile);
-        $keyFile = fopen('clientcert.pem', 'w');
+        $keyFile = fopen($this->keypair_filenames['publicKey'], 'w');
         fwrite($keyFile, $pubKey);
         fclose($keyFile);
         $this->keypair['publicKey'] = $pubKey;
@@ -271,15 +279,13 @@ class HData {
 
         echo $this->debug ? $this->serverPub : "";
 
-        echo $this->debug ? "Split message:\n\n" : "";
+        echo $this->debug ? "Sending client public key:\n\n" : "";
         //Split message into 128 byte chunks to encrypt and send to socket
         $this->writeEnc($this->keypair['publicKey']);
 
         echo $this->debug ? "Reading response:\n\n" : "";
         //Recive encrypted newline from server
         $response = fread($this->socket, 1024);
-
-        echo $this->debug ? $this->response : "";
 
         //Decrypte message from server
         $decrypted = $this->getResponse($response);
