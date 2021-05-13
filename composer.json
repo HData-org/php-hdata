@@ -17,18 +17,10 @@
     "require": {
         "php": "^7.4|^8.0"
     },
-    "require-dev": {
-        "phpunit/phpunit": "^9.0"
-    },
     "autoload": {
         "psr-4": {
             "HData\\HData\\": "src"
         }
-    },
-    "scripts": {
-        "test": "vendor/bin/phpunit",
-        "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
-
     },
     "config": {
         "sort-packages": true
