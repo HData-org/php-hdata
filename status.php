@@ -2,12 +2,14 @@
 
 header('Content-Type: application/json');
 
-require ('src/HData.php');
+require('src/HData.php');
 
-$host = "127.0.0.1";
+use HData\HData;
+
+$host = "flolon.cc";
 $port = 8888;
 
-$hdata = new HData($host, $port);
+$hdata = new HData\HData($host, $port, true);
 
 echo $hdata->getStatus();
 

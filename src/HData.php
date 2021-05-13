@@ -1,5 +1,7 @@
 <?php
 
+namespace HData\HData;
+
 class HData {
 
     /*
@@ -61,7 +63,7 @@ class HData {
             }
         }
 
-        $this->createKeyPair();
+        $this->getKeyPair();
         $this->openSocket();
         $this->handshake();
     }
@@ -184,7 +186,9 @@ class HData {
     private function writeEnc($send) {
         $tmp = [];
         for($i = 0; $i < ceil(strlen($send)/128); $i++) {
-            array_push($tmp, $this->substring($send, $i*128, $i*128+128));
+            $chunk = $this->substring($send, $i*128, $i*128+128);
+            echo $this->debug ? $chunk : "";
+            array_push($tmp, $chunk);
         }
         foreach($tmp as $chunk) {
             if(!openssl_public_encrypt($chunk, $encrypted_data, $this->serverPub, OPENSSL_PKCS1_OAEP_PADDING)) {
@@ -211,7 +215,7 @@ class HData {
         }
     }
 
-    private function createKeyPair() {
+    private function getKeyPair() {
         if(file_exists('.htprivkey.pem') && file_exists('clientcert.pem')) {
             echo $this->debug ? "Reading client keys from files..." : "";
             //Read client keys from files
@@ -221,34 +225,43 @@ class HData {
             $fp = fopen("clientcert.pem", "r");
             $this->keypair['publicKey'] = fread($fp, 8192);
             fclose($fp);
+            if($this-> keypair['privateKey'] == "" || $this-> keypair['privateKey'] == null) {
+                //Private key blank, create new pair
+                echo $this->debug ? "Private key is blank.\n" : "";
+                $this->createKeyPair();
+            }
 
             echo $this->debug ? "OK.\n" : "";
         } else {
-            echo $this->debug ? "Creating new client keys..." : "";
-            //Create the private and public key
-            $ssl_type = [
-                "digest_alg" => "sha512",
-                "private_key_bits" => 4096,
-                "private_key_type" => OPENSSL_KEYTYPE_RSA,
-            ];
-            $res = openssl_pkey_new($ssl_type);
-            //Extract the private key from $res to $privKey
-            openssl_pkey_export($res, $privKey);
-            //Extract the public key from $res to $pubKey
-            $pubKey = openssl_pkey_get_details($res);
-            $pubKey = $pubKey["key"];
-            //Write keys to files
-            $keyFile = fopen('.htprivkey.pem', 'w');
-            fwrite($keyFile, $privKey);
-            fclose($keyFile);
-            $keyFile = fopen('clientcert.pem', 'w');
-            fwrite($keyFile, $pubKey);
-            fclose($keyFile);
-            $this->keypair['publicKey'] = $pubKey;
-            $this->keypair['privateKey'] = $privKey;
-            
-            echo $this->debug ? "OK.\n" : "";
+            $this->createKeyPair();
         }
+    }
+
+    private function createKeyPair() {
+        echo $this->debug ? "Creating new client keys..." : "";
+        //Create the private and public key
+        $ssl_type = [
+            "digest_alg" => "sha512",
+            "private_key_bits" => 4096,
+            "private_key_type" => 'OPENSSL_KEYTYPE_RSA'
+        ];
+        $res = openssl_pkey_new($ssl_type);
+        //Extract the private key from $res to $privKey
+        openssl_pkey_export($res, $privKey);
+        //Extract the public key from $res to $pubKey
+        $pubKey = openssl_pkey_get_details($res);
+        $pubKey = $pubKey["key"];
+        //Write keys to files
+        $keyFile = fopen('.htprivkey.pem', 'w');
+        fwrite($keyFile, $privKey);
+        fclose($keyFile);
+        $keyFile = fopen('clientcert.pem', 'w');
+        fwrite($keyFile, $pubKey);
+        fclose($keyFile);
+        $this->keypair['publicKey'] = $pubKey;
+        $this->keypair['privateKey'] = $privKey;
+        
+        echo $this->debug ? "OK.\n" : "";
     }
 
     private function handshake() {
@@ -258,10 +271,16 @@ class HData {
 
         echo $this->debug ? $this->serverPub : "";
 
+        echo $this->debug ? "Split message:\n\n" : "";
         //Split message into 128 byte chunks to encrypt and send to socket
         $this->writeEnc($this->keypair['publicKey']);
+
+        echo $this->debug ? "Reading response:\n\n" : "";
         //Recive encrypted newline from server
         $response = fread($this->socket, 1024);
+
+        echo $this->debug ? $this->response : "";
+
         //Decrypte message from server
         $decrypted = $this->getResponse($response);
 
