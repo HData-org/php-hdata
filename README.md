@@ -30,10 +30,6 @@ echo $hdata->getStatus();
 $hdata->disconnect();
 ```
 
-### Security
-
-If you discover any security related issues, please email ben@bunnbuns.net instead of using the issue tracker.
-
 ## License
 
 The Apache License 2. Please see [License File](LICENSE.md) for more information.
